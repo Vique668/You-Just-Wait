@@ -2,15 +2,30 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Ну, погоди! — Лови яйца</title>
 
 <style>
-body {
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
   margin: 0;
+  padding: 0;
   background: #f9f6f0;
   overflow: hidden;
   font-family: Arial, sans-serif;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  position: fixed;
+  overscroll-behavior: none;
 }
 
 .game-bg {
@@ -19,42 +34,50 @@ body {
   background-image: url('https://i.postimg.cc/xjWMj3LW/Whisk-3056c696bf17cd897e949a9ecb3f44d5eg.png');
   background-repeat: no-repeat;
   background-position: center;
-  background-size: contain;
+  background-size: cover;
   z-index: -1;
 }
 
 #score {
   position: fixed;
-  top: 10px;
+  top: max(10px, env(safe-area-inset-top));
   left: 10px;
-  font-size: 22px;
+  font-size: clamp(16px, 4vw, 22px);
   font-weight: bold;
+  background: rgba(255,255,255,0.7);
+  padding: 6px 12px;
+  border-radius: 8px;
+  z-index: 10;
 }
 
 #chicks {
   position: fixed;
-  top: 8cm;
+  top: max(60px, calc(env(safe-area-inset-top) + 50px));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 40px;
-  font-size: 32px;
+  gap: clamp(15px, 4vw, 40px);
+  font-size: clamp(24px, 6vw, 32px);
+  z-index: 10;
 }
 
 .egg {
   position: absolute;
-  font-size: 34px;
+  font-size: clamp(28px, 7vw, 34px);
   transform: translate(-50%, -50%);
   cursor: pointer;
   user-select: none;
+  touch-action: manipulation;
+  z-index: 20;
 }
 
 #catcher {
   position: fixed;
-  height: calc(5 * 37.8px);
+  height: clamp(120px, 25vw, 189px);
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 50;
+  transition: left 0.05s linear, top 0.05s linear;
 }
 
 #overlay {
@@ -65,35 +88,55 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  padding: 15px;
 }
 
 #quiz {
   background: white;
-  padding: 24px;
+  padding: clamp(16px, 4vw, 24px);
   border-radius: 12px;
-  width: 90%;
+  width: 100%;
   max-width: 500px;
   text-align: center;
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+
+#quiz p {
+  font-size: clamp(16px, 4vw, 20px);
+  margin: 0 0 15px 0;
 }
 
 .quiz-option {
-  margin: 10px 0;
-  padding: 10px;
-  border: 1px solid #ccc;
+  margin: 8px 0;
+  padding: clamp(12px, 3vw, 16px);
+  border: 2px solid #ccc;
   border-radius: 8px;
   cursor: pointer;
+  font-size: clamp(15px, 3.5vw, 18px);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
 }
 
 .quiz-option:hover {
   background: #f0f0f0;
 }
 
+.quiz-option:active {
+  background: #e0e0e0;
+}
+
 .quiz-option.correct {
-  background: #90EE90;
+  background: #90EE90 !important;
+  border-color: #4CAF50;
 }
 
 .quiz-option.wrong {
-  background: #FFB6C1;
+  background: #FFB6C1 !important;
+  border-color: #f44336;
 }
 
 #gameover {
@@ -102,26 +145,63 @@ body {
   display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.75);
   color: white;
-  font-size: 40px;
+  font-size: clamp(24px, 6vw, 40px);
   z-index: 200;
   flex-direction: column;
+  padding: 20px;
+  text-align: center;
 }
 
 #restartBtn {
   margin-top: 20px;
-  padding: 15px 30px;
-  font-size: 20px;
+  padding: clamp(12px, 3vw, 15px) clamp(24px, 6vw, 30px);
+  font-size: clamp(16px, 4vw, 20px);
   background: #4CAF50;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  touch-action: manipulation;
 }
 
 #restartBtn:hover {
   background: #45a049;
+}
+
+#restartBtn:active {
+  background: #3d8b40;
+  transform: scale(0.98);
+}
+
+/* Адаптация для очень маленьких экранов */
+@media (max-height: 500px) and (orientation: landscape) {
+  #chicks {
+    top: 50px;
+    font-size: 24px;
+    gap: 15px;
+  }
+  #catcher {
+    height: 100px;
+  }
+  #quiz p {
+    font-size: 14px;
+  }
+  .quiz-option {
+    padding: 8px;
+    font-size: 14px;
+    margin: 4px 0;
+  }
+}
+
+/* Адаптация для планшетов */
+@media (min-width: 768px) and (max-width: 1024px) {
+  #catcher {
+    height: 160px;
+  }
 }
 </style>
 </head>
@@ -146,6 +226,8 @@ let misses = 0;
 let currentEgg = null;
 let gameActive = true;
 let quizActive = false;
+let catcherX = window.innerWidth / 2;
+let catcherY = window.innerHeight / 2;
 
 const scoreEl = document.getElementById('score');
 const chicksEl = document.getElementById('chicks');
@@ -298,7 +380,16 @@ class Egg {
     this.ty = t.y;
 
     this.active = true;
-    this.el.onclick = () => this.catch();
+    
+    // Универсальный обработчик для мыши и тача
+    const handleCatch = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.catch();
+    };
+    
+    this.el.addEventListener('click', handleCatch);
+    this.el.addEventListener('touchstart', handleCatch, { passive: false });
   }
 
   update() {
@@ -370,7 +461,15 @@ function showQuiz() {
     const btn = document.createElement('div');
     btn.className = 'quiz-option';
     btn.textContent = opt;
-    btn.onclick = () => {
+    
+    const handleAnswer = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Предотвращаем повторное срабатывание
+      if (btn.dataset.answered) return;
+      btn.dataset.answered = 'true';
+      
       if (opt === correct) {
         btn.classList.add('correct');
         setTimeout(() => {
@@ -380,6 +479,10 @@ function showQuiz() {
         }, 500);
       } else {
         btn.classList.add('wrong');
+        // Показываем правильный ответ
+        quizEl.querySelectorAll('.quiz-option').forEach(b => {
+          if (b.textContent === correct) b.classList.add('correct');
+        });
         setTimeout(() => {
           overlay.style.display = 'none';
           quizActive = false;
@@ -388,11 +491,21 @@ function showQuiz() {
           if (continueGame) {
             nextEgg();
           }
-        }, 1000);
+        }, 1500);
       }
     };
+    
+    btn.addEventListener('click', handleAnswer);
+    btn.addEventListener('touchstart', handleAnswer, { passive: false });
     quizEl.appendChild(btn);
   });
+}
+
+function updateCatcherPosition(x, y) {
+  catcherX = x;
+  catcherY = y;
+  catcherEl.style.left = x + 'px';
+  catcherEl.style.top = y + 'px';
 }
 
 function restartGame() {
@@ -414,15 +527,64 @@ function restartGame() {
   nextEgg();
 }
 
-nextEgg();
-loop();
+// === УНИВЕРСАЛЬНЫЕ ОБРАБОТЧИКИ ДЛЯ МЫШИ И ТАЧА ===
 
+// Движение мыши (для ПК)
 document.addEventListener('mousemove', e => {
-  catcherEl.style.left = e.clientX + 'px';
-  catcherEl.style.top = e.clientY + 'px';
+  updateCatcherPosition(e.clientX, e.clientY);
 });
 
+// Движение пальца (для мобильных)
+document.addEventListener('touchmove', e => {
+  if (e.touches.length > 0) {
+    updateCatcherPosition(e.touches[0].clientX, e.touches[0].clientY);
+  }
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('touchstart', e => {
+  if (e.touches.length > 0) {
+    updateCatcherPosition(e.touches[0].clientX, e.touches[0].clientY);
+  }
+}, { passive: true });
+
+// Предотвращаем зум при двойном тапе
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if (now - lastTouchEnd <= 300) {
+    e.preventDefault();
+  }
+  lastTouchEnd = now;
+}, { passive: false });
+
+// Предотвращаем контекстное меню при долгом нажатии
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// Обработка изменения ориентации экрана
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    catcherX = window.innerWidth / 2;
+    catcherY = window.innerHeight / 2;
+    updateCatcherPosition(catcherX, catcherY);
+  }, 100);
+});
+
+// Обработка изменения размера окна (например, при открытии клавиатуры)
+window.addEventListener('resize', () => {
+  catcherX = Math.min(catcherX, window.innerWidth);
+  catcherY = Math.min(catcherY, window.innerHeight);
+  updateCatcherPosition(catcherX, catcherY);
+});
+
+// Запуск игры
+nextEgg();
+loop();
 restartBtn.addEventListener('click', restartGame);
+restartBtn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  restartGame();
+}, { passive: false });
 </script>
 </body>
 </html>
