@@ -178,30 +178,25 @@ html, body {
 }
 
 /* Адаптация для очень маленьких экранов */
-@media (max-aspect-ratio: 1/1) {
-  .game-bg {
-    background-size: 100% auto; /* ширина = 100% экрана, высота по пропорции */
-    background-position: center top;
+@media (max-height: 500px) and (orientation: landscape) {
+  #chicks {
+    top: 50px;
+    font-size: 24px;
+    gap: 15px;
   }
-  
-  #score {
-    top: max(10px, env(safe-area-inset-top));
+  #catcher {
+    height: 100px;
+  }
+  #quiz p {
     font-size: 14px;
   }
-  
-  #chicks {
-    top: max(45px, calc(env(safe-area-inset-top) + 35px));
-    font-size: 22px;
-    gap: 12px;
+  .quiz-option {
+    padding: 8px;
+    font-size: 14px;
+    margin: 4px 0;
   }
 }
 
-/* Адаптация для планшетов */
-@media (min-width: 768px) and (max-width: 1024px) {
-  #catcher {
-    height: 160px;
-  }
-}
 </style>
 </head>
 
