@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ну, погоди! — Лови яйца</title>
+
+<style>
+body {
+  margin: 0;
+  background: #f9f6f0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+.game-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://i.postimg.cc/xjWMj3LW/Whisk-3056c696bf17cd897e949a9ecb3f44d5eg.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  z-index: -1;
+}
+
+#score {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+#chicks {
+  position: fixed;
+  top: 8cm;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 40px;
+  font-size: 32px;
+}
+
+.egg {
+  position: absolute;
+  font-size: 34px;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  user-select: none;
+}
+
+#catcher {
+  position: fixed;
+  height: calc(5 * 37.8px);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#quiz {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.quiz-option {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.quiz-option:hover {
+  background: #f0f0f0;
+}
+
+.quiz-option.correct {
+  background: #90EE90;
+}
+
+.quiz-option.wrong {
+  background: #FFB6C1;
+}
+
+#gameover {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 40px;
+  z-index: 200;
+  flex-direction: column;
+}
+
+#restartBtn {
+  margin-top: 20px;
+  padding: 15px 30px;
+  font-size: 20px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#restartBtn:hover {
+  background: #45a049;
+}
+</style>
+</head>
+
+<body>
+<div class="game-bg"></div>
+<div id="score">Счёт: 0</div>
+<div id="chicks"></div>
+<div id="gameover">
+  <div id="gameoverText"></div>
+  <button id="restartBtn">Играть снова</button>
+</div>
+<img id="catcher" src="https://i.postimg.cc/CLqtd7XR/acetone-20251229-13425-359.png" />
+
+<div id="overlay">
+  <div id="quiz"></div>
+</div>
+
+<script>
+let score = 0;
+let misses = 0;
+let currentEgg = null;
+let gameActive = true;
+let quizActive = false;
+
+const scoreEl = document.getElementById('score');
+const chicksEl = document.getElementById('chicks');
+const gameOverEl = document.getElementById('gameover');
+const gameOverTextEl = document.getElementById('gameoverText');
+const restartBtn = document.getElementById('restartBtn');
+const overlay = document.getElementById('overlay');
+const quizEl = document.getElementById('quiz');
+const catcherEl = document.getElementById('catcher');
+
+const CM = 37.8;
+const IMG_WIDTH = 1000;
+const IMG_HEIGHT = 600;
+const CHICKENS = [
+  { x: 140, y: 100 },
+  { x: 860, y: 100 }
+];
+
+const allQuestions = [
+  { q: "My aunt ___ got a big house.", options: ["have got", "has got", "is got"], correct: "has got" },
+  { q: "The fridge ___ white and new.", options: ["am", "is", "are"], correct: "is" },
+  { q: "I've got ___ uncle. He is very kind.", options: ["a", "an", "is"], correct: "an" },
+  { q: "___ your sister got straight hair?", options: ["Have", "Has", "Is"], correct: "Has" },
+  { q: "The cupboards ___ in the kitchen.", options: ["is", "am", "are"], correct: "are" },
+  { q: "My cousins ___ got a parrot.", options: ["has", "have", "are"], correct: "have" },
+  { q: "My bedroom ___ small but very nice.", options: ["am", "is", "are"], correct: "is" },
+  { q: "I ___ got a new bike for my birthday.", options: ["has", "have", "am"], correct: "have" },
+  { q: "She has got ___ armchair in her room.", options: ["a", "an", "are"], correct: "an" },
+  { q: "___ the mirror on the wall?", options: ["Is", "Are", "Have"], correct: "Is" },
+  { q: "The bath ___ in the bathroom.", options: ["am", "is", "are"], correct: "is" },
+  { q: "He ___ got a sister.", options: ["hasn't", "haven't", "isn't"], correct: "hasn't" },
+  { q: "___ your grandparents got a garden?", options: ["Has", "Have", "Are"], correct: "Have" },
+  { q: "The wardrobe ___ very tall.", options: ["am", "is", "are"], correct: "is" },
+  { q: "I've got ___ old lamp.", options: ["a", "an", "is"], correct: "an" },
+  { q: "My eyes ___ brown.", options: ["am", "is", "are"], correct: "are" },
+  { q: "___ your cousin got a pet?", options: ["Do", "Has", "Have"], correct: "Has" },
+  { q: "There is ___ armchair next to the sofa.", options: ["a", "an", "are"], correct: "an" },
+  { q: "My brother ___ ten years old.", options: ["am", "is", "are"], correct: "is" },
+  { q: "We ___ got a lot of books in the bookcase.", options: ["has", "have", "are"], correct: "have" },
+  { q: "The shower ___ next to the bath.", options: ["am", "is", "are"], correct: "is" },
+  { q: "The kitchen ___ very big.", options: ["isn't", "aren't", "hasn't"], correct: "isn't" },
+  { q: "___ you got a big family?", options: ["Has", "Have", "Do"], correct: "Have" },
+  { q: "My house ___ very beautiful.", options: ["am", "is", "are"], correct: "is" },
+  { q: "I've got ___ aunt in London.", options: ["a", "an", "is"], correct: "an" },
+  { q: "The chairs ___ next to the table.", options: ["is", "am", "are"], correct: "are" },
+  { q: "She has got ___ new sofa.", options: ["a", "an", "are"], correct: "a" },
+  { q: "___ the cat under the table?", options: ["Is", "Are", "Has"], correct: "Is" },
+  { q: "My friend ___ got a new computer.", options: ["have", "has", "is"], correct: "has" },
+  { q: "The cooker ___ next to the fridge.", options: ["am", "is", "are"], correct: "is" }
+];
+
+let usedQuestionIndices = new Set();
+
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function shuffleOptions(options) {
+  return shuffleArray(options);
+}
+
+function getRandomQuestion() {
+  if (usedQuestionIndices.size >= allQuestions.length) {
+    usedQuestionIndices.clear();
+  }
+  
+  let availableIndices = [];
+  for (let i = 0; i < allQuestions.length; i++) {
+    if (!usedQuestionIndices.has(i)) {
+      availableIndices.push(i);
+    }
+  }
+  
+  const randomIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+  usedQuestionIndices.add(randomIndex);
+  
+  const question = allQuestions[randomIndex];
+  const shuffledOpts = shuffleOptions(question.options);
+  
+  return {
+    q: question.q,
+    options: shuffledOpts,
+    correct: question.correct
+  };
+}
+
+function getChickenCoords() {
+  const bg = document.querySelector('.game-bg').getBoundingClientRect();
+  const scale = Math.min(bg.width / IMG_WIDTH, bg.height / IMG_HEIGHT);
+  const cx = bg.left + bg.width / 2;
+  const cy = bg.top + bg.height / 2;
+
+  return CHICKENS.map(p => {
+    const dir = p.x < IMG_WIDTH / 2 ? 1 : -1;
+    return {
+      x: cx + ((p.x + dir * 5 * CM) - IMG_WIDTH / 2) * scale,
+      y: cy + ((p.y + 2 * CM) - IMG_HEIGHT / 2) * scale
+    };
+  });
+}
+
+function getTarget() {
+  return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+}
+
+function handleMissedEgg(x, y) {
+  const temp = document.createElement('div');
+  temp.textContent = '🐣';
+  temp.style.position = 'absolute';
+  temp.style.left = x + 'px';
+  temp.style.top = (y + 3 * CM) + 'px';
+  temp.style.transform = 'translate(-50%, -50%)';
+  temp.style.fontSize = '36px';
+  document.body.appendChild(temp);
+  setTimeout(() => temp.remove(), 1000);
+
+  if (misses < 4) {
+    const chick = document.createElement('div');
+    chick.textContent = '🐣';
+    chicksEl.appendChild(chick);
+  }
+
+  misses++;
+  if (misses >= 4) {
+    endGame('🐣 TRY AGAIN 🐣');
+    return false;
+  }
+
+  return true;
+}
+
+class Egg {
+  constructor() {
+    this.el = document.createElement('div');
+    this.el.className = 'egg';
+    this.el.textContent = '🥚';
+    document.body.appendChild(this.el);
+
+    const start = getChickenCoords()[Math.floor(Math.random() * 2)];
+    this.x = start.x;
+    this.y = start.y;
+
+    const t = getTarget();
+    this.tx = t.x;
+    this.ty = t.y;
+
+    this.active = true;
+    this.el.onclick = () => this.catch();
+  }
+
+  update() {
+    if (!this.active || quizActive) return;
+    this.x += (this.tx - this.x) * 0.025;
+    this.y += (this.ty - this.y) * 0.025;
+    this.el.style.left = this.x + 'px';
+    this.el.style.top = this.y + 'px';
+
+    if (Math.abs(this.x - this.tx) < 20 && Math.abs(this.y - this.ty) < 20) {
+      this.miss();
+    }
+  }
+
+  catch() {
+    if (!this.active) return;
+    this.active = false;
+    this.el.remove();
+    score++;
+    scoreEl.textContent = `Счёт: ${score}`;
+
+    if (score >= 20) {
+      endGame('🎉🎊 YOU WIN 🎉🎊');
+      return;
+    }
+
+    showQuiz();
+  }
+
+  miss() {
+    if (!this.active) return;
+    this.active = false;
+    this.el.remove();
+
+    const continueGame = handleMissedEgg(this.x, this.y);
+    if (continueGame) {
+      nextEgg();
+    }
+  }
+}
+
+function endGame(text) {
+  gameActive = false;
+  gameOverTextEl.textContent = text;
+  gameOverEl.style.display = 'flex';
+}
+
+function nextEgg() {
+  if (!gameActive) return;
+  currentEgg = new Egg();
+}
+
+function loop() {
+  if (currentEgg) currentEgg.update();
+  requestAnimationFrame(loop);
+}
+
+function showQuiz() {
+  quizActive = true;
+  overlay.style.display = 'flex';
+  quizEl.innerHTML = '';
+
+  const { q, options, correct } = getRandomQuestion();
+  const p = document.createElement('p');
+  p.textContent = q;
+  quizEl.appendChild(p);
+
+  options.forEach(opt => {
+    const btn = document.createElement('div');
+    btn.className = 'quiz-option';
+    btn.textContent = opt;
+    btn.onclick = () => {
+      if (opt === correct) {
+        btn.classList.add('correct');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          quizActive = false;
+          nextEgg();
+        }, 500);
+      } else {
+        btn.classList.add('wrong');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          quizActive = false;
+          
+          const continueGame = handleMissedEgg(window.innerWidth / 2, window.innerHeight / 2);
+          if (continueGame) {
+            nextEgg();
+          }
+        }, 1000);
+      }
+    };
+    quizEl.appendChild(btn);
+  });
+}
+
+function restartGame() {
+  score = 0;
+  misses = 0;
+  gameActive = true;
+  quizActive = false;
+  usedQuestionIndices.clear();
+  
+  scoreEl.textContent = 'Счёт: 0';
+  chicksEl.innerHTML = '';
+  gameOverEl.style.display = 'none';
+  
+  if (currentEgg) {
+    currentEgg.el.remove();
+    currentEgg = null;
+  }
+  
+  nextEgg();
+}
+
+nextEgg();
+loop();
+
+document.addEventListener('mousemove', e => {
+  catcherEl.style.left = e.clientX + 'px';
+  catcherEl.style.top = e.clientY + 'px';
+});
+
+restartBtn.addEventListener('click', restartGame);
+</script>
+</body>
+</html>
